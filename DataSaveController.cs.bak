@@ -1,0 +1,178 @@
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Linq;
+
+namespace MyWebApi
+{
+    [Route("api/[controller]")]
+    public class DataSaveController : ControllerBase
+    {
+        private readonly string _loginUrl = "http://test-demo.aemenersol.com/api/Account/Login";
+        private readonly string _dashboardUrl = "http://test-demo.aemenersol.com/api/Dashboard";
+        private readonly string _platformWellActualUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellActual";
+        private readonly string _platformWellDummyUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellDummy";
+        private readonly string _username = "user@aemenersol.com";
+        private readonly string _password = "Test@123";
+        private string _apiKey;
+
+        private readonly string _connectionString = "Server=mysql;Port=3306;Database=db;Uid=user;Pwd=admin123;";
+
+        [HttpGet("SaveData")]
+        public async Task<IActionResult> SaveData()
+        {
+            try
+            {
+                // Login to get the API key
+                _apiKey = await Login();
+
+                // Retrieve data from external APIs
+                var dashboardData = await GetDataFromExternalApi(_dashboardUrl);
+                var platformWellActualData = await GetDataFromExternalApi(_platformWellActualUrl);
+                var platformWellDummyData = await GetDataFromExternalApi(_platformWellDummyUrl);
+
+                // Save data to MySQL database
+                await SaveDataToDatabase(dashboardData, platformWellActualData, platformWellDummyData);
+
+                return Ok("Data saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Error saving data: {ex.Message}" });
+            }
+        }
+
+        private async Task<string> Login()
+        {
+            using var httpClient = new HttpClient();
+            var loginData = new { username = _username, password = _password };
+            var content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(loginData), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(_loginUrl, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to login: {response.StatusCode}");
+            }
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            // Assuming the response contains the API key directly
+            return responseData.Trim('"'); // Remove double quotes if present
+        }
+
+        private async Task<JObject> GetDataFromExternalApi(string url)
+        {
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            var response = await httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to access data from {url}: {response.StatusCode}");
+            }
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            return JObject.Parse(responseData);
+        }
+
+        private async Task SaveDataToDatabase(JObject dashboardData, JObject platformWellActualData, JObject platformWellDummyData)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            // Save dashboard data
+            await SaveDashboardData(connection, dashboardData);
+
+            // Save platform well actual data
+            await SavePlatformWellActualData(connection, platformWellActualData);
+
+            // Save platform well dummy data
+            await SavePlatformWellDummyData(connection, platformWellDummyData);
+        }
+
+        
+        public async Task SaveDashboardData(JObject dashboardData)
+        {
+            var chartData = dashboardData["chartDonut"];
+            foreach (var item in chartData)
+            {
+                var chartName = item["name"].ToString();
+                var value = item["value"].ToObject<decimal>();
+
+                await InsertDashboardData(chartName, value);
+            }
+        }
+
+        public async Task SavePlatformData(JObject platformData)
+        {
+            var platforms = platformData.ToObject<List<Platform>>();
+
+            foreach (var platform in platforms)
+            {
+                await InsertPlatform(platform);
+                await InsertWellData(platform.Id, platform.Wells);
+            }
+        }
+
+        private async Task InsertDashboardData(string chartName, decimal value)
+        {
+            await _connection.OpenAsync();
+
+            var sql = "INSERT INTO DashboardData (ChartName, Value) VALUES (@ChartName, @Value)";
+            using var cmd = new MySqlCommand(sql, _connection);
+            cmd.Parameters.AddWithValue("@ChartName", chartName);
+            cmd.Parameters.AddWithValue("@Value", value);
+            await cmd.ExecuteNonQueryAsync();
+
+            _connection.Close();
+        }
+
+        private async Task InsertPlatform(Platform platform)
+        {
+            await _connection.OpenAsync();
+
+            var sql = "INSERT INTO Platform (UniqueName, Latitude, Longitude, CreatedAt, UpdatedAt) " +
+                      "VALUES (@UniqueName, @Latitude, @Longitude, @CreatedAt, @UpdatedAt)";
+            using var cmd = new MySqlCommand(sql, _connection);
+            cmd.Parameters.AddWithValue("@UniqueName", platform.UniqueName);
+            cmd.Parameters.AddWithValue("@Latitude", platform.Latitude);
+            cmd.Parameters.AddWithValue("@Longitude", platform.Longitude);
+            cmd.Parameters.AddWithValue("@CreatedAt", platform.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+            cmd.Parameters.AddWithValue("@UpdatedAt", platform.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+            await cmd.ExecuteNonQueryAsync();
+
+            platform.Id = (int)cmd.LastInsertedId;
+
+            _connection.Close();
+        }
+
+        private async Task InsertWellData(int platformId, List<Well> wells)
+        {
+            foreach (var well in wells)
+            {
+                await InsertWell(platformId, well);
+            }
+        }
+
+        private async Task InsertWell(int platformId, Well well)
+        {
+            await _connection.OpenAsync();
+
+            var sql = "INSERT INTO Well (PlatformId, UniqueName, Latitude, Longitude, CreatedAt, UpdatedAt) " +
+                      "VALUES (@PlatformId, @UniqueName, @Latitude, @Longitude, @CreatedAt, @UpdatedAt)";
+            using var cmd = new MySqlCommand(sql, _connection);
+            cmd.Parameters.AddWithValue("@PlatformId", platformId);
+            cmd.Parameters.AddWithValue("@UniqueName", well.UniqueName);
+            cmd.Parameters.AddWithValue("@Latitude", well.Latitude);
+            cmd.Parameters.AddWithValue("@Longitude", well.Longitude);
+            cmd.Parameters.AddWithValue("@CreatedAt", well.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+            cmd.Parameters.AddWithValue("@UpdatedAt", well.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+            await cmd.ExecuteNonQueryAsync();
+
+            _connection.Close();
+        }
+
+    }
+}

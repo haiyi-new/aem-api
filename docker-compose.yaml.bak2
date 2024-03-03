@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  # MySQL service
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123 # Optional, if root access is needed
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # Your web application service
+  my-webapi:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: admin123
+    depends_on:
+      - mysql
+
+volumes:
+  # Volume to store MySQL data
+  mysql-data: {}

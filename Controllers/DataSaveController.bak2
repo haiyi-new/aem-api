@@ -1,0 +1,109 @@
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace MyWebApi
+{
+    [Route("api/[controller]")]
+    public class DataSaveController : ControllerBase
+    {
+        private readonly string _loginUrl = "http://test-demo.aemenersol.com/api/Account/Login";
+        private readonly string _dashboardUrl = "http://test-demo.aemenersol.com/api/Dashboard";
+        private readonly string _platformWellActualUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellActual";
+        private readonly string _platformWellDummyUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellDummy";
+        private readonly string _username = "user@aemenersol.com";
+        private readonly string _password = "Test@123";
+        private string _apiKey = ""; // Initialize to empty string
+        private readonly string _connectionString = "Server=db;Port=3306;Database=db;Uid=user;Pwd=admin123;";
+
+
+        [HttpGet("SaveData")]
+        public async Task<IActionResult> SaveData()
+        {
+            try
+            {
+                // Login to get the API key
+                _apiKey = await Login();
+
+                // Retrieve data from external APIs
+                var dashboardData = await GetDataFromExternalApi(_dashboardUrl);
+                var platformWellActualData = await GetDataFromExternalApi(_platformWellActualUrl);
+                var platformWellDummyData = await GetDataFromExternalApi(_platformWellDummyUrl);
+
+                // Ensure API key is not null before proceeding
+                if (!string.IsNullOrEmpty(_apiKey))
+                {
+                    // Save data to MySQL database using DataSave class
+                    var dataSaver = new DataSave(_connectionString);
+                    await dataSaver.SaveData(dashboardData, platformWellActualData, platformWellDummyData);
+
+                    return Ok("Data saved successfully.");
+                }
+                else
+                {
+                    return BadRequest("API key is null or empty. Failed to retrieve API key.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Error saving data: {ex.Message}" });
+            }
+        }
+
+        private async Task<string> Login()
+        {
+            using var httpClient = new HttpClient();
+            var loginData = new { username = _username, password = _password };
+            var content = new StringContent(JsonConvert.SerializeObject(loginData), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(_loginUrl, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to login: {response.StatusCode}");
+            }
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            // Assuming the response contains the API key directly
+            return responseData.Trim('"'); // Remove double quotes if present
+        }
+
+        private async Task<JObject> GetDataFromExternalApi(string url)
+        {
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+            var response = await httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Failed to access data from {url}: {response.StatusCode}");
+            }
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response from {url}: {responseData}"); // Add this line for logging
+
+            try
+            {
+                // Try parsing as an object
+                return JObject.Parse(responseData);
+            }
+            catch (JsonReaderException)
+            {
+                try
+                {
+                    // If parsing as an object fails, try parsing as an array
+                    var jsonArray = JArray.Parse(responseData);
+                    // Convert the first item of the array to JObject
+                    return jsonArray.Count > 0 ? jsonArray[0].ToObject<JObject>() : null;
+                }
+                catch (JsonReaderException ex)
+                {
+                    throw new Exception($"Failed to parse JSON response from {url}: {ex.Message}");
+                }
+            }
+        }
+    }
+}

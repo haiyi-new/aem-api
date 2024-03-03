@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  # MySQL service
+  db:
+    image: mysql:8.0
+    container_name: aem-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: db
+      MYSQL_ROOT_PASSWORD: admin143
+      MYSQL_PASSWORD: admin123
+      MYSQL_USER: user
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - aem
+
+  # phpMyAdmin service
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - aem
+    depends_on:
+      - db
+
+  # Your web application service
+  my-webapi:
+    build: .
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    volumes:
+      - /run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock
+    networks:
+      - aem
+    environment:
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: admin123
+    depends_on:
+      - db
+
+networks:
+  aem:
+    driver: bridge
+
+volumes:
+  # Volume to store MySQL data
+  mysql-data:

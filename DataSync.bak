@@ -1,0 +1,112 @@
+using System.Data.SqlClient; // Replace with your database provider if not using SQL
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc; // Use Microsoft.AspNetCore.Mvc for Web API controllers
+
+namespace MyWebApi // Replace with your actual namespace
+{
+    public class DataSync
+    {
+        private readonly string _apiUrl; // Adjust the actual API URL
+        private readonly string _username; // Remove if not used
+        private readonly string _password; // Remove if not used
+        private readonly string _connectionString;
+        public DataSync(string apiUrl, string username, string password, string connectionString)
+        {
+            _apiUrl = "http://test-demo.aemenersol.com/index.html";
+            _username = "user@aemenersol.com"
+            _password = "Test@123";
+            _connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=MyDatabase;Integrated Security=True";
+        }
+
+        public async Task<IActionResult> SyncData()
+        {
+            try
+            {
+                // 1. Login (replace with your actual logic)
+                var bearerToken = await Login();
+
+                // 2. Call GetPlatformWellActual and GetPlatformWellDummy (replace with your methods if different)
+                var platformWellData = await GetPlatformWellData(bearerToken, "GetPlatformWellActual");
+                await ProcessAndStorePlatformData(platformWellData);
+
+                platformWellData = await GetPlatformWellData(bearerToken, "GetPlatformWellDummy");
+                await ProcessAndStorePlatformData(platformWellData);
+
+                return Ok("Data synchronization successful");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = < span class="math-inline">"Error syncing data\: \{ex\.Message\}" \}\);
+            }
+        }
+        private async Task<string\> Login\(\)
+        {
+            using var httpClient \= new HttpClient\(\);
+            // Add any authentication headers or parameters needed based on your login API
+            // Replace with your actual login API endpoint and handle response accordingly
+            var response \= await httpClient\.GetAsync\("http\://your\-login\-api\-endpoint"\); // Adjust the URL
+            if \(\!response\.IsSuccessStatusCode\)
+            {   
+                throw new Exception\("Failed to login"\);
+            }
+            // Extract the bearer token from the login response \(replace with actual token extraction logic\)
+            var content \= await response\.Content\.ReadAsStringAsync\(\);
+            // Parse the response to extract the token \(e\.g\., using a JSON parser\)
+            return "\.\.\."; // Replace with your token extraction logic
+        }
+private async Task<List<PlatformWellData\>\> GetPlatformWellData\(string bearerToken, string < 0\> endpoint\)
+\{
+    using var httpClient \= new HttpClient\(\);
+    httpClient\.DefaultRequestHeaders\.< 1\> Authorization \= new System\.Net\.Http\.Headers\.AuthenticationHeaderValue\("Bearer",</ 0\> bearerToken\);
+    var response \= await httpClient\.GetAsync\(</ span > "{_apiUrl}/{endpoint}");
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new Exception($"Failed to retrieve platform well data: {response.StatusCode}");
+    }
+
+    var content = await response.Content.ReadAsStringAsync();
+    return JsonConvert.DeserializeObject<List<PlatformWellData>>(content); // Replace with your data deserialization logic
+}
+
+private async Task ProcessAndStorePlatformData(List<PlatformWellData> data)
+{
+    using var connection = new SqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    foreach (var platformWell in data)
+    {
+        // Check if platform exists (replace with your query based on platform ID)
+        string sql = $"SELECT * FROM platform WHERE PlatformId = {platformWell.PlatformId}";
+        var existingPlatform = await connection.QuerySingleOrDefaultAsync<Platform>(sql);
+
+        if (existingPlatform != null)
+        {
+            // Update platform data
+            sql = GetPlatformUpdateSql(platformWell);
+            await connection.ExecuteAsync(sql);
+        }
+        else
+        {
+            // Insert platform data
+            sql = GetPlatformInsertSql(platformWell);
+            await connection.ExecuteAsync(sql);
+        }
+
+        // Similar logic for well data (replace with your code)
+        // ...
+    }
+}
+
+private string GetPlatformUpdateSql(PlatformWellData data)
+{
+    // Implement logic to build an UPDATE SQL statement based on your table structure and data
+    // ... (replace with your logic to build UPDATE SQL)
+    return ""; // Return empty string if no update is possible
+}
+
+private string GetPlatformInsertSql(PlatformWellData data)
+{
+            // Implement logic to build an INSERT SQL statement based on your table structure and data
+            // ... (replace with

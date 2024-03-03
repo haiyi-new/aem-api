@@ -1,0 +1,48 @@
+using System.Data.SqlClient; // Remove if not using SQL
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc; // Use Microsoft.AspNetCore.Mvc for Web API controllers
+
+namespace MyWebApi // Replace with your actual namespace
+{
+    [Route("api/[controller]")] // Use Web API-specific route attribute
+    public class DataSyncController : ControllerBase // Inherit from ControllerBase
+    {
+        private readonly string _apiUrl = "http://test-demo.aemenersol.com/index.html"; // Adjust the actual API URL
+        private readonly string _username = "user@aemenersol.com"; // Remove if not used
+        private readonly string _password = "Test@123"; // Remove if not used
+        private readonly string _connectionString = "Server=(localdb)\\MSSQLLocalDB;Database=MyDatabase;Integrated Security=True"; // Remove if not used
+
+        [HttpGet] // Use Web API-specific HttpGet attribute
+        public async Task<IActionResult> SyncData()
+        {
+            try
+            {
+                // Login to the REST API (replace with your actual logic)
+                using var httpClient = new HttpClient();
+
+                // Add any authentication headers or parameters needed
+
+                var response = await httpClient.GetAsync(_apiUrl); // Await the asynchronous call
+
+                // Check for successful response
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest(new { message = $"Failed to access data: {response.StatusCode}" });
+                }
+
+                // Read the response content
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                // ... (process the retrieved data, potentially storing it in the database)
+
+                return Ok(responseContent); // Return the retrieved data in the response body
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Error syncing data: {ex.Message}" });
+            }
+        }
+    }
+}

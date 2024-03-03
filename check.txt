@@ -1,0 +1,25 @@
+ => ERROR [my-webapi build 9/9] RUN dotnet publish -c Release -o out                                                                                       4.0s
+------
+ > [my-webapi build 9/9] RUN dotnet publish -c Release -o out:
+0.598 MSBuild version 17.7.4+3ebbd7c49 for .NET
+1.317   Determining projects to restore...
+1.335 /usr/share/dotnet/sdk/7.0.406/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.Shared.targets(111,5): warning NETSDK1080: A PackageReference to Microsoft.AspNetCore.App is not necessary when targeting .NET Core 3.0 or higher. If Microsoft.NET.Sdk.Web is used, the shared framework will be referenced automatically. Otherwise, the PackageReference should be replaced with a FrameworkReference. [/app/MyWebApi.csproj]
+1.600   All projects are up-to-date for restore.
+1.648 /usr/share/dotnet/sdk/7.0.406/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.Sdk.DefaultItems.Shared.targets(111,5): warning NETSDK1080: A PackageReference to Microsoft.AspNetCore.App is not necessary when targeting .NET Core 3.0 or higher. If Microsoft.NET.Sdk.Web is used, the shared framework will be referenced automatically. Otherwise, the PackageReference should be replaced with a FrameworkReference. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(89,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(78,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(67,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(55,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(44,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(32,23): warning CS8618: Non-nullable property 'UniqueName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(23,23): warning CS8618: Non-nullable property 'FirstName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(24,23): warning CS8618: Non-nullable property 'LastName' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(25,23): warning CS8618: Non-nullable property 'Username' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.896 /app/Model.cs(17,23): warning CS8618: Non-nullable property 'Name' must contain a non-null value when exiting constructor. Consider declaring the property as nullable. [/app/MyWebApi.csproj]
+3.897 /app/Controllers/DataSaveController.cs(45,42): warning CS8604: Possible null reference argument for parameter 'dashboardData' in 'Task DataSave.SaveData(SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)'. [/app/MyWebApi.csproj]
+3.897 /app/Controllers/DataSaveController.cs(45,57): warning CS8604: Possible null reference argument for parameter 'platformWellActualData' in 'Task DataSave.SaveData(SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)'. [/app/MyWebApi.csproj]
+3.897 /app/Controllers/DataSaveController.cs(45,81): warning CS8604: Possible null reference argument for parameter 'platformWellDummyData' in 'Task DataSave.SaveData(SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)'. [/app/MyWebApi.csproj]
+3.897 /app/DataSyncController.cs(85,75): error CS0246: The type or namespace name 'PlatformData' could not be found (are you missing a using directive or an assembly reference?) [/app/MyWebApi.csproj]
+3.897 /app/Controllers/DataSaveController.cs(94,28): warning CS8603: Possible null reference return. [/app/MyWebApi.csproj]
+------
+failed to solve: process "/bin/sh -c dotnet publish -c Release -o out" did not complete successfully: exit code: 1
