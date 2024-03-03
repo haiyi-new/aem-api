@@ -14,22 +14,22 @@ namespace MyWebApi.Models
 
     public class ChartItem
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public decimal Value { get; set; }
     }
 
     public class User
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Username { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Username { get; set; }
     }
 
     // Model for the response of http://localhost/api/DataSync/GetPlatformWellActual
     public class PlatformWellActualResponse
     {
         public int Id { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -41,7 +41,7 @@ namespace MyWebApi.Models
     public class PlatformWellDummyResponse
     {
         public int Id { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime LastUpdate { get; set; }
@@ -52,7 +52,7 @@ namespace MyWebApi.Models
     public class PlatformWellActual
     {
         public int Id { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -64,7 +64,7 @@ namespace MyWebApi.Models
     {
         public int Id { get; set; }
         public int PlatformId { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -75,7 +75,7 @@ namespace MyWebApi.Models
     public class PlatformWellDummy
     {
         public int Id { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime LastUpdate { get; set; }
@@ -86,7 +86,7 @@ namespace MyWebApi.Models
     {
         public int Id { get; set; }
         public int PlatformId { get; set; }
-        public string UniqueName { get; set; }
+        public string? UniqueName { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public DateTime LastUpdate { get; set; }

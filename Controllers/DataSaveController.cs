@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using MyWebApi.Models;
+using MySql.Data.MySqlClient; // Add this namespace for MySqlConnection
 
 namespace MyWebApi.Controllers
 {
@@ -19,6 +21,7 @@ namespace MyWebApi.Controllers
         private readonly string _password = "Test@123";
         private string _apiKey = "";
         private readonly string _connectionString = "Server=db;Port=3306;Database=db;Uid=user;Pwd=admin123;";
+
 
         [HttpGet("SaveData")]
         public async Task<IActionResult> SaveData()
@@ -36,18 +39,27 @@ namespace MyWebApi.Controllers
                 var platformWellActualDataJson = await GetDataFromExternalApi(_platformWellActualUrl);
                 var platformWellDummyDataJson = await GetDataFromExternalApi(_platformWellDummyUrl);
 
-                // Deserialize JSON strings into appropriate model objects
-                var dashboardData = JsonConvert.DeserializeObject<SyncDataResponse>(dashboardDataJson);
-                var platformWellActualData = JsonConvert.DeserializeObject<PlatformWellActualResponse[]>(platformWellActualDataJson);
-                var platformWellDummyData = JsonConvert.DeserializeObject<PlatformWellDummyResponse[]>(platformWellDummyDataJson);
+                var dashboardData = JsonConvert.DeserializeObject<SyncDataResponse>(dashboardDataJson.ToString());
+                var platformWellActualData = JsonConvert.DeserializeObject<PlatformWellActualResponse[]>(platformWellActualDataJson.ToString());
+                var platformWellDummyData = JsonConvert.DeserializeObject<PlatformWellDummyResponse[]>(platformWellDummyDataJson.ToString());
+
 
                 // Pass the deserialized data to DataSave class for saving
-                await _dataSave.SaveData(dashboardData, platformWellActualData, platformWellDummyData);
+                var dataSaver = new DataSave(_connectionString);
+                // Define MySqlConnection object and open the connection
+                using (MySqlConnection connection = new MySqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    // Call the SaveData method of DataSave class with the MySqlConnection object
+                    await dataSaver.SaveData(connection, dashboardData, platformWellActualData, platformWellDummyData);
+                }
 
+                // Return appropriate response
                 return Ok("Data saved successfully.");
             }
             catch (Exception ex)
             {
+                // Return error response
                 return BadRequest(new { message = $"Error saving data: {ex.Message}" });
             }
         }

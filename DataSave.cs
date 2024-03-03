@@ -3,25 +3,30 @@ using System.Data;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using MyWebApi.Models;
+using MyWebApi.Controllers;
 
 namespace MyWebApi
 {
     public class DataSave
     {
-        private readonly string _connectionString;
+        private readonly string _connectionString = "Server=db;Port=3306;Database=db;Uid=user;Pwd=admin123;";
 
         public DataSave(string connectionString)
         {
             _connectionString = connectionString;
         }
+
+        // Define dataSaved variable to track if data has been saved
+        private bool dataSaved = false;
+
         public async Task SaveData(MySqlConnection connection, SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)
         {
-            if (!_dataSaved)
+            if (!dataSaved)
             {
                 await SaveDashboardData(connection, dashboardData);
                 await SavePlatformWellActualData(connection, platformWellActualData);
                 await SavePlatformWellDummyData(connection, platformWellDummyData);
-                _dataSaved = true;
+                dataSaved = true;
             }
             else
             {
@@ -34,38 +39,49 @@ namespace MyWebApi
         {
             foreach (var donut in dashboardData.ChartDonut)
             {
-                await SaveDashboardChart(connection, donut.Name, donut.Value);
+                await SaveDashboardChart(connection, donut?.Name ?? "Unknown", donut.Value);
             }
 
             foreach (var bar in dashboardData.ChartBar)
             {
-                await SaveDashboardChart(connection, bar.Name, bar.Value);
+                await SaveDashboardChart(connection, bar?.Name ?? "Unknown", bar.Value);
             }
 
             foreach (var user in dashboardData.TableUsers)
             {
-                await SaveUser(connection, user.FirstName, user.LastName, user.Username);
+                await SaveUserData(connection, user.FirstName ?? "Unknown", user.LastName ?? "Unknown", user.Username ?? "Unknown");
             }
         }
 
-        public async Task SavePlatformWellActualData(MySqlConnection connection, PlatformWellActualResponse[] platformWellActualData)
+        private async Task SavePlatformWellActualData(MySqlConnection connection, PlatformWellActualResponse[] platformWellActualData)
         {
-            foreach (var platformData in platformWellActualData)
+            if (platformWellActualData != null)
             {
-                await SavePlatformActualData(connection, platformData);
+                foreach (var platformData in platformWellActualData)
+                {
+                    if (platformData != null)
+                    {
+                        await SavePlatformActualData(connection, platformData);
+                    }
+                }
             }
         }
 
-        public async Task SavePlatformWellDummyData(MySqlConnection connection, PlatformWellDummyResponse[] platformWellDummyData)
+        private async Task SavePlatformWellDummyData(MySqlConnection connection, PlatformWellDummyResponse[] platformWellDummyData)
         {
-            foreach (var platformData in platformWellDummyData)
+            if (platformWellDummyData != null)
             {
-                await SavePlatformDummyData(connection, platformData);
+                foreach (var platformData in platformWellDummyData)
+                {
+                    if (platformData != null)
+                    {
+                        await SavePlatformDummyData(connection, platformData);
+                    }
+                }
             }
         }
 
-
-        private async Task SaveDashboardData(MySqlConnection connection, string chartName, decimal value) // Change the parameter type to decimal
+        private async Task SaveDashboardChart(MySqlConnection connection, string chartName, decimal value) // Change the parameter type to decimal
         {
             using var cmd = new MySqlCommand("INSERT INTO DashboardData (ChartName, Value) VALUES (@ChartName, @Value)", connection);
             cmd.Parameters.AddWithValue("@ChartName", chartName);
@@ -90,19 +106,23 @@ namespace MyWebApi
             var createdAt = platformData.CreatedAt;
             var updatedAt = platformData.UpdatedAt;
 
-            // Save platform data
-            using var cmd = new MySqlCommand("INSERT INTO PlatformWellActual (UniqueName, Latitude, Longitude, CreatedAt, UpdatedAt) VALUES (@UniqueName, @Latitude, @Longitude, @CreatedAt, @UpdatedAt)", connection);
-            cmd.Parameters.AddWithValue("@UniqueName", uniqueName);
-            cmd.Parameters.AddWithValue("@Latitude", latitude);
-            cmd.Parameters.AddWithValue("@Longitude", longitude);
-            cmd.Parameters.AddWithValue("@CreatedAt", createdAt);
-            cmd.Parameters.AddWithValue("@UpdatedAt", updatedAt);
-            await cmd.ExecuteNonQueryAsync();
-
-            // Save well data
-            foreach (var well in platformData.Well)
+            // Ensure platformUniqueName is not null before passing it to SavePlatformActualWellData
+            if (uniqueName != null)
             {
-                await SavePlatformActualWellData(connection, platformData.UniqueName, well);
+                // Save platform data
+                using var cmd = new MySqlCommand("INSERT INTO PlatformWellActual (UniqueName, Latitude, Longitude, CreatedAt, UpdatedAt) VALUES (@UniqueName, @Latitude, @Longitude, @CreatedAt, @UpdatedAt)", connection);
+                cmd.Parameters.AddWithValue("@UniqueName", uniqueName);
+                cmd.Parameters.AddWithValue("@Latitude", latitude);
+                cmd.Parameters.AddWithValue("@Longitude", longitude);
+                cmd.Parameters.AddWithValue("@CreatedAt", createdAt);
+                cmd.Parameters.AddWithValue("@UpdatedAt", updatedAt);
+                await cmd.ExecuteNonQueryAsync();
+
+                // Save well data
+                foreach (var well in platformData.Well)
+                {
+                    await SavePlatformActualWellData(connection, uniqueName, well);
+                }
             }
         }
 
@@ -113,18 +133,22 @@ namespace MyWebApi
             var longitude = platformData.Longitude;
             var lastUpdate = platformData.LastUpdate;
 
-            // Save platform data
-            using var cmd = new MySqlCommand("INSERT INTO PlatformWellDummy (UniqueName, Latitude, Longitude, LastUpdate) VALUES (@UniqueName, @Latitude, @Longitude, @LastUpdate)", connection);
-            cmd.Parameters.AddWithValue("@UniqueName", uniqueName);
-            cmd.Parameters.AddWithValue("@Latitude", latitude);
-            cmd.Parameters.AddWithValue("@Longitude", longitude);
-            cmd.Parameters.AddWithValue("@LastUpdate", lastUpdate);
-            await cmd.ExecuteNonQueryAsync();
-
-            // Save well data
-            foreach (var well in platformData.Well)
+            // Ensure platformUniqueName is not null before passing it to SavePlatformDummyWellData
+            if (uniqueName != null)
             {
-                await SavePlatformDummyWellData(connection, uniqueName, well);
+                // Save platform data
+                using var cmd = new MySqlCommand("INSERT INTO PlatformWellDummy (UniqueName, Latitude, Longitude, LastUpdate) VALUES (@UniqueName, @Latitude, @Longitude, @LastUpdate)", connection);
+                cmd.Parameters.AddWithValue("@UniqueName", uniqueName);
+                cmd.Parameters.AddWithValue("@Latitude", latitude);
+                cmd.Parameters.AddWithValue("@Longitude", longitude);
+                cmd.Parameters.AddWithValue("@LastUpdate", lastUpdate);
+                await cmd.ExecuteNonQueryAsync();
+
+                // Save well data
+                foreach (var well in platformData.Well)
+                {
+                    await SavePlatformDummyWellData(connection, uniqueName, well);
+                }
             }
         }
 

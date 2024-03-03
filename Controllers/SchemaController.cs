@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using MyWebApi.Models;
+using MyWebApi.Controllers;
 
 namespace MyWebApi.Controllers
 {
@@ -10,7 +11,7 @@ namespace MyWebApi.Controllers
     [ApiController]
     public class SchemaController : ControllerBase
     {
-        private readonly string _connectionString;
+        private readonly string _connectionString = "Server=db;Port=3306;Database=db;Uid=user;Pwd=admin123;";
 
         public SchemaController(string connectionString)
         {
