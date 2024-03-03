@@ -14,50 +14,34 @@ namespace MyWebApi
         {
             _connectionString = connectionString;
         }
-        public async Task SaveData(MySqlConnection connection, SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)
-        {
-            if (!_dataSaved)
-            {
-                await SaveDashboardData(connection, dashboardData);
-                await SavePlatformWellActualData(connection, platformWellActualData);
-                await SavePlatformWellDummyData(connection, platformWellDummyData);
-                _dataSaved = true;
-            }
-            else
-            {
-                Console.WriteLine("Data has already been saved. Skipping the saving process.");
-            }
-        }
 
-
-        public async Task SaveDashboardData(MySqlConnection connection, SyncDataResponse dashboardData)
+        public async Task SaveData(SyncDataResponse dashboardData, PlatformWellActualResponse[] platformWellActualData, PlatformWellDummyResponse[] platformWellDummyData)
         {
+            using var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            // Save dashboard data
             foreach (var donut in dashboardData.ChartDonut)
             {
-                await SaveDashboardChart(connection, donut.Name, donut.Value);
+                await SaveDashboardData(connection, donut.Name, donut.Value);
             }
 
             foreach (var bar in dashboardData.ChartBar)
             {
-                await SaveDashboardChart(connection, bar.Name, bar.Value);
+                await SaveDashboardData(connection, bar.Name, bar.Value);
             }
 
             foreach (var user in dashboardData.TableUsers)
             {
-                await SaveUser(connection, user.FirstName, user.LastName, user.Username);
+                await SaveUserData(connection, user.FirstName, user.LastName, user.Username);
             }
-        }
 
-        public async Task SavePlatformWellActualData(MySqlConnection connection, PlatformWellActualResponse[] platformWellActualData)
-        {
+            // Save platform well actual data
             foreach (var platformData in platformWellActualData)
             {
-                await SavePlatformActualData(connection, platformData);
+                await SavePlatformActualData(connection, platformData); 
             }
-        }
-
-        public async Task SavePlatformWellDummyData(MySqlConnection connection, PlatformWellDummyResponse[] platformWellDummyData)
-        {
+            // Save platform well dummy data
             foreach (var platformData in platformWellDummyData)
             {
                 await SavePlatformDummyData(connection, platformData);
@@ -128,13 +112,13 @@ namespace MyWebApi
             }
         }
 
-        private async Task SavePlatformActualWellData(MySqlConnection connection, string platformUniqueName, PlatformWellActualWell well)
+        private async Task SavePlatformActualWellData(MySqlConnection connection, string platformUniqueName, PlatformWellActualWell wellData)
         {
-            var uniqueName = well.UniqueName;
-            var latitude = well.Latitude;
-            var longitude = well.Longitude;
-            var createdAt = well.CreatedAt;
-            var updatedAt = well.UpdatedAt;
+            var uniqueName = wellData.UniqueName;
+            var latitude = wellData.Latitude;
+            var longitude = wellData.Longitude;
+            var createdAt = wellData.CreatedAt;
+            var updatedAt = wellData.UpdatedAt;
 
             using var cmd = new MySqlCommand("INSERT INTO PlatformWellActualWell (PlatformUniqueName, UniqueName, Latitude, Longitude, CreatedAt, UpdatedAt) VALUES (@PlatformUniqueName, @UniqueName, @Latitude, @Longitude, @CreatedAt, @UpdatedAt)", connection);
             cmd.Parameters.AddWithValue("@PlatformUniqueName", platformUniqueName);
@@ -146,12 +130,12 @@ namespace MyWebApi
             await cmd.ExecuteNonQueryAsync();
         }
 
-        private async Task SavePlatformDummyWellData(MySqlConnection connection, string platformUniqueName, PlatformWellDummyWell well)
+        private async Task SavePlatformDummyWellData(MySqlConnection connection, string platformUniqueName, PlatformWellDummyWell wellData)
         {
-            var uniqueName = well.UniqueName;
-            var latitude = well.Latitude;
-            var longitude = well.Longitude;
-            var lastUpdate = well.LastUpdate;
+            var uniqueName = wellData.UniqueName;
+            var latitude = wellData.Latitude;
+            var longitude = wellData.Longitude;
+            var lastUpdate = wellData.LastUpdate;
 
             using var cmd = new MySqlCommand("INSERT INTO PlatformWellDummyWell (PlatformUniqueName, UniqueName, Latitude, Longitude, LastUpdate) VALUES (@PlatformUniqueName, @UniqueName, @Latitude, @Longitude, @LastUpdate)", connection);
             cmd.Parameters.AddWithValue("@PlatformUniqueName", platformUniqueName);

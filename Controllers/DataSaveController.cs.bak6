@@ -36,13 +36,8 @@ namespace MyWebApi.Controllers
                 var platformWellActualDataJson = await GetDataFromExternalApi(_platformWellActualUrl);
                 var platformWellDummyDataJson = await GetDataFromExternalApi(_platformWellDummyUrl);
 
-                // Deserialize JSON strings into appropriate model objects
-                var dashboardData = JsonConvert.DeserializeObject<SyncDataResponse>(dashboardDataJson);
-                var platformWellActualData = JsonConvert.DeserializeObject<PlatformWellActualResponse[]>(platformWellActualDataJson);
-                var platformWellDummyData = JsonConvert.DeserializeObject<PlatformWellDummyResponse[]>(platformWellDummyDataJson);
-
-                // Pass the deserialized data to DataSave class for saving
-                await _dataSave.SaveData(dashboardData, platformWellActualData, platformWellDummyData);
+                // Process the retrieved data as needed (e.g., save to database)
+                // Example: var dashboardData = dashboardDataJson.ToObject<YourDashboardModel>();
 
                 return Ok("Data saved successfully.");
             }
