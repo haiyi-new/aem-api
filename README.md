@@ -1,15 +1,18 @@
-To run this:- docker compose build docker compose up
+Prerequiste: Need Docker
+Windows: WSL2, Linux:Debian
 
-3 container will be up -Dotnet Web Api -Mysql -Phpmyadmin: http://localhost:8080/index.php?route=/&route=%2F&db=db
+To run this:- 
+-docker compose up --build
+-attach shell, inside container of MyWebApi: dotnet dotnet-ef database update
 
-Communicate via REST API with http://test-demo.aemenersol.com/index.html
 
-Login and view dashboard. http://localhost/api/DataSync/SyncData
+To view the table,Phpmyadmin: http://localhost:8080/index.php
 
-view Platform Well Actual http://localhost/api/DataSync/GetPlatformWellActual
+login,getdata, view in json->
+http://localhost/DataSave/Actual
+http://localhost/DataSave/Dummy
 
-view Platform Well Dummy http://localhost/api/DataSync/GetPlatformWellDummy
 
-Sync Data via REST API with http://test-demo.aemenersol.com/index.html 1)creating table in MySQL http://localhost/api/Schema/InitializeSchema (Fail)
-
-login, getdata, save data -> saving process -> http://localhost/api/DataSave/SaveData
+login, getdata, save data -> saving process: Get
+http://localhost/DataSave/Actualx
+http://localhost/DataSave/Dummyx
