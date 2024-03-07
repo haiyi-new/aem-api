@@ -13,8 +13,7 @@ services:
       MYSQL_USER: user
     volumes:
       - mysql-data:/var/lib/mysql
-    networks:
-      - aem
+
 
   # phpMyAdmin service
   phpmyadmin:
@@ -23,24 +22,23 @@ services:
     ports:
       - 8080:80
     environment:
-      - PMA_ARBITRARY=1
+      - PMA_HOST=db
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks:
-      - aem
     depends_on:
       - db
 
-  # Your web application service
+  # Web application service
   my-webapi:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: dev
     ports:
-      - "80:80"
+      - "80:5218"
     restart: unless-stopped
     volumes:
-      - /run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock
-    networks:
-      - aem
+      - ./:/app
     environment:
       MYSQL_DATABASE: db
       MYSQL_USER: user
@@ -48,9 +46,9 @@ services:
     depends_on:
       - db
 
-networks:
-  aem:
-    driver: bridge
+  toolbox:
+    image: ubuntu
+    command: ["sleep", "inf"]
 
 volumes:
   # Volume to store MySQL data

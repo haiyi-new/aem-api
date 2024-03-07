@@ -10,58 +10,21 @@ using MySql.Data.MySqlClient; // Add this namespace for MySqlConnection
 
 namespace MyWebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class DataSaveController : ControllerBase
     {
         private readonly string _loginUrl = "http://test-demo.aemenersol.com/api/Account/Login";
-        private readonly string _dashboardUrl = "http://test-demo.aemenersol.com/api/Dashboard";
         private readonly string _platformWellActualUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellActual";
         private readonly string _platformWellDummyUrl = "http://test-demo.aemenersol.com/api/PlatformWell/GetPlatformWellDummy";
         private readonly string _username = "user@aemenersol.com";
         private readonly string _password = "Test@123";
         private string _apiKey = "";
-        private readonly string _connectionString = "Server=db;Port=3306;Database=db;Uid=user;Pwd=admin123;";
 
+        private readonly MyDbContext dbContext;
 
-        [HttpGet("SaveData")]
-        public async Task<IActionResult> SaveData()
+        public DataSaveController(MyDbContext myDbContext)
         {
-            try
-            {
-                _apiKey = await Login();
-
-                if (string.IsNullOrEmpty(_apiKey))
-                {
-                    return BadRequest("API key is null or empty. Failed to retrieve API key.");
-                }
-
-                var dashboardDataJson = await GetDataFromExternalApi(_dashboardUrl);
-                var platformWellActualDataJson = await GetDataFromExternalApi(_platformWellActualUrl);
-                var platformWellDummyDataJson = await GetDataFromExternalApi(_platformWellDummyUrl);
-
-                var dashboardData = JsonConvert.DeserializeObject<SyncDataResponse>(dashboardDataJson.ToString());
-                var platformWellActualData = JsonConvert.DeserializeObject<PlatformWellActualResponse[]>(platformWellActualDataJson.ToString());
-                var platformWellDummyData = JsonConvert.DeserializeObject<PlatformWellDummyResponse[]>(platformWellDummyDataJson.ToString());
-
-
-                // Pass the deserialized data to DataSave class for saving
-                var dataSaver = new DataSave(_connectionString);
-                // Define MySqlConnection object and open the connection
-                using (MySqlConnection connection = new MySqlConnection(_connectionString))
-                {
-                    await connection.OpenAsync();
-                    // Call the SaveData method of DataSave class with the MySqlConnection object
-                    await dataSaver.SaveData(connection, dashboardData, platformWellActualData, platformWellDummyData);
-                }
-
-                // Return appropriate response
-                return Ok("Data saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Return error response
-                return BadRequest(new { message = $"Error saving data: {ex.Message}" });
-            }
+            dbContext = myDbContext;
         }
 
         private async Task<string> Login()
@@ -80,7 +43,7 @@ namespace MyWebApi.Controllers
             return responseData.Trim('"');
         }
 
-        private async Task<JArray> GetDataFromExternalApi(string url)
+        private async Task<String> GetDataFromExternalApi(string url)
         {
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
@@ -92,17 +55,121 @@ namespace MyWebApi.Controllers
             }
 
             var responseData = await response.Content.ReadAsStringAsync();
-            var jsonArray = JArray.Parse(responseData);
 
-            // Iterate over the items in the jsonArray and add the contents of the well[] arrays to responseData
-            for (int i = 0; i < jsonArray.Count; i++)
+            return responseData;
+        }
+
+        [HttpGet("Actual")]
+        public async Task<IActionResult> Actual()
+        {
+            try
             {
-                var wellArray = jsonArray[i]["well"];
-                jsonArray[i]["wellData"] = wellArray;
+                _apiKey = await Login();
+
+                if (string.IsNullOrEmpty(_apiKey))
+                {
+                    return BadRequest ("API key is null or empty. Failed to retrieve API key.");
+                }
+
+                var dashboardDataJsonRaw = await GetDataFromExternalApi(_platformWellActualUrl);
+                var jsonObject = JsonConvert.DeserializeObject<List<PlatformWellActualResponse>>(dashboardDataJsonRaw);
+
+                return Ok(jsonObject);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {message = $"Error saving data: {ex.Message}"});
+            }
+        }
+
+        [HttpGet("Dummy")]
+        public async Task<IActionResult> Dummy()
+        {
+            try
+            {
+                _apiKey = await Login();
+
+                if (string.IsNullOrEmpty(_apiKey))
+                {
+                    return BadRequest ("API key is null or empty. Failed to retrieve API key.");
+                }
+
+                var dashboardDataJsonRaw = await GetDataFromExternalApi(_platformWellDummyUrl);
+                var jsonObject = JsonConvert.DeserializeObject<List<PlatformWellDummyResponse>>(dashboardDataJsonRaw);
+
+                return Ok(jsonObject);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {message = $"Error saving data: {ex.Message}"});
+            }
+        }
+        
+        [HttpGet("Actualx")]
+        public async Task<IActionResult> Actualx()
+        {
+            _apiKey = await Login();
+
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                return BadRequest("API key is null or empty. Failed to retrieve API key.");
             }
 
-            // Return the updated jsonArray
-            return jsonArray;
+            var dashboardDataJsonRaw = await GetDataFromExternalApi(_platformWellActualUrl);
+            var jsonObject = JsonConvert.DeserializeObject<List<PlatformWellActualResponse>>(dashboardDataJsonRaw);
+
+            // create new database
+            var well = new PlatformWellActualWell
+            {
+                Id = 126666,
+                PlatformId = 13,
+                UniqueName = "Test",
+                Latitude = 12.0,
+                Longitude = 13.0,
+                CreatedAt = new DateTime(),
+                UpdatedAt = new DateTime(),
+            };
+
+            dbContext.PlatformWellActualResponse.AddRange(jsonObject);
+            //dbContext.PlatformWellActualWell.Add(well);
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(jsonObject.First().Well.First());
         }
+
+        [HttpGet("Dummyx")]
+        public async Task<IActionResult> Dummyx()
+        {
+            _apiKey = await Login();
+
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                return BadRequest("API key is null or empty. Failed to retrieve API key.");
+            }
+
+            var dashboardDataJsonRaw = await GetDataFromExternalApi(_platformWellDummyUrl);
+            var jsonObject = JsonConvert.DeserializeObject<List<PlatformWellDummyResponse>>(dashboardDataJsonRaw);
+
+            // create new database
+            var well = new PlatformWellActualWell
+            {
+                Id = 126667,
+                PlatformId = 13,
+                UniqueName = "Test2",
+                Latitude = 12.0,
+                Longitude = 13.0,
+                CreatedAt = new DateTime(),
+                UpdatedAt = new DateTime(),
+            };
+
+            dbContext.PlatformWellDummyResponse.AddRange(jsonObject);
+            //dbContext.PlatformWellActualWell.Add(well);
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(jsonObject.First().Well.First());
+        }
+
     }
 }

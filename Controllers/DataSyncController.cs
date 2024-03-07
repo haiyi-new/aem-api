@@ -15,7 +15,7 @@ namespace MyWebApi
         public static string? ApiKey { get; set; }
     }
 
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class DataSyncController : ControllerBase
     {
         private readonly string _loginUrl = "http://test-demo.aemenersol.com/api/Account/Login";
