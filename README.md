@@ -1,8 +1,8 @@
 Prerequiste: Need Docker
 Windows: WSL2, Linux:Debian
 
-To run this:- 
--docker compose up --build
+To run this:- <br />
+-docker compose up --build<br />
 -attach shell, inside container of MyWebApi: dotnet dotnet-ef database update
 
 
