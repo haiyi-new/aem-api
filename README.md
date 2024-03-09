@@ -6,6 +6,7 @@ To run this:-                       <br />
 -attach shell, inside container of MyWebApi: <br />
   1) dotnet ef migrations add InitialCreate <br />
   2) dotnet dotnet-ef database update <br />
+  
 If fail to do 1) <br />
   3)dotnet new tool-manifest  <br />
   4)dotnet tool install --local dotnet-ef --version  <br />
