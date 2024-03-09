@@ -3,8 +3,13 @@ Windows: WSL2, Linux:Debian
 
 To run this:-                       <br />
 -docker compose up --build          <br />
--attach shell, inside container of MyWebApi: dotnet dotnet-ef database update
-
+-attach shell, inside container of MyWebApi: <br />
+  1) dotnet ef migrations add InitialCreate <br />
+  2) dotnet dotnet-ef database update <br />
+If fail to do 1) <br />
+  3)dotnet new tool-manifest  <br />
+  4)dotnet tool install --local dotnet-ef --version  <br />
+Then run again 1)
 
 To view the table,Phpmyadmin:<br /> http://localhost:8080/index.php
 
