@@ -7,10 +7,13 @@ To run this:-                       <br />
   1) dotnet ef migrations add InitialCreate <br />
   2) dotnet dotnet-ef database update <br />
   
-If fail to do 1) <br />
-  3)dotnet new tool-manifest  <br />
-  4)dotnet tool install --local dotnet-ef --version  <br />
-Then run again 1)
+  If fail to do 1) <br />
+  3)dotnet new tool-manifest --force  <br />
+  4)dotnet tool install --local dotnet-ef --version 7.0.7 <br />
+  Then run again 1)
+  --for WSL/WSL2--
+  5)dotnet clean
+  Then run again 1)
 
 To view the table,Phpmyadmin:<br /> http://localhost:8080/index.php
 
