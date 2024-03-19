@@ -4,8 +4,9 @@ Windows: WSL2, Linux:Debian
 To run this:-                       <br />
 -docker compose up --build          <br />
 -attach shell, inside container of MyWebApi: <br />
-  1) dotnet ef migrations add InitialCreate <br />
-  2) dotnet dotnet-ef database update <br />
+
+  1)dotnet ef migrations add InitialCreate <br />
+  2)dotnet dotnet-ef database update <br />
   
   If fail to do 1) <br />
   3)dotnet new tool-manifest --force  <br />
